@@ -1,0 +1,19 @@
+{
+  "name": "hotel_primavera_server",
+  "version": "0.0.1",
+  "description": "api for persisting information for primavera hotel",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PedroMendes92/hotel_primavera_server.git"
+  },
+  "author": "Pedro Mendes",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PedroMendes92/hotel_primavera_server/issues"
+  },
+  "homepage": "https://github.com/PedroMendes92/hotel_primavera_server#readme"
+}
