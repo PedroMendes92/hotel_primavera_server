@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const moment = require('moment');
 const TokenGenerator = require('uuid-token-generator');
 const tokgen = new TokenGenerator(256, TokenGenerator.BASE62);

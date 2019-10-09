@@ -1,11 +1,10 @@
-var express = require('express');
-var bodyParser = require('body-parser');
-var cookieParser = require('cookie-parser');
-var session = require('express-session');
-var morgan = require('morgan');
-var mongoose = require('mongoose');
+const express = require('express');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const morgan = require('morgan');
+const mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/user', {useNewUrlParser: true,useUnifiedTopology: true});
-var User = require('./models/user');
+const User = require('./models/user');
 
 // invoke an instance of express application.
 var app = express();
@@ -20,14 +19,12 @@ app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+app.use(cors());
+
 // route for user signup
 app.route('/signup')
     .post((req, res) => {
-        User.create({
-            name: req.body.name,
-            email: req.body.email,
-            password: req.body.password
-        })
+        User.create(req.body)
         .then(user => {
             res.send(user);
         })
