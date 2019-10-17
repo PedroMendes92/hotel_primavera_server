@@ -25,4 +25,10 @@ function isAuthenticated(req, res, next){
 router.use(validateBody);
 router.use(isAuthenticated);
 
+router.post("/", (req,res) => {
+    User.get(req.body)
+        .then((user) => res.send(user))
+        .catch((err) => res.send(err) )
+});
+
 module.exports = router;

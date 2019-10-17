@@ -48,7 +48,7 @@ app.route("/logout")
         res.send("logged out");
     });
 
-app.route("/user")
+/*app.route("/user")
     .post((req,res) => {
         User.get(req.body)
             .then((user) => res.send(user))
@@ -58,7 +58,7 @@ app.route("/user")
         User.update(req.body)
             .then((user) => res.send(user))
             .catch((err) => res.send(err) )
-    });
+    });*/
 
 // route for handling 404 requests(unavailable routes)
 app.use(function (req, res, next) {

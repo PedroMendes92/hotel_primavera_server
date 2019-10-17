@@ -48,6 +48,7 @@ const canProceed = (user, settings) => {
            moment().isBefore(user.tokenExpireDate) );
 }
 
+
 const findOne = (settings) => {
     return new Promise( (resolve, reject) => {
         UserModel.findOne({"name":settings.name}, (err, user) =>{
@@ -68,9 +69,10 @@ const User = {
             result: true,
             message: []
         };
-        for(const property of bodyOptions){
+        console.log(method)
+        for(const property of Object.keys(bodyOptions)){
             switch (method) {
-                case "GET":
+                case "POST":
                     if(!getOptionsAllowed.includes(property)){
                         resultObject.result = false;
                         resultObject.message.push(property);
@@ -80,6 +82,7 @@ const User = {
                     break;
             }
         }
+        console.log(resultObject)
         return resultObject;
     },
     isAuthenticated(bodyOptions){
@@ -101,8 +104,10 @@ const User = {
             } )
         });
     },
-    get: (settings) => {
-        return findOne(settings);
+    get: async (settings) => {
+        const query = { name: settings.name };
+        const user = await UserModel.findOne(query);
+        return user;
     },
     create: (settings) => {
         settings.password = bcrypt.hashSync(settings.password, bcrypt.genSaltSync());
