@@ -1,3 +1,4 @@
+const settings = require("./userSettings.json");
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const moment = require('moment');
@@ -26,29 +27,11 @@ const UserSchema = mongoose.Schema({
 
 const UserModel = mongoose.model("User",UserSchema);
 
-const defaultUserSettings = {
-    name: "",
-    email: "",
-    password: "",
-    token: "",
-    tokenExpireDate: new Date(),
-    phone: 0,
-    job: "",
-    address: "",
-    postalCode: "",
-    cc: 0,
-    id: 0,
-    birthDate: new Date(),
-    expiryDate: new Date(),
-    tax: 0,
-    socialSecurity: 0,
-    nationality: 0,
-    healthNumber: 0
-}
-
-const excludeProperties = [
-    "name", "token", "tokenExpireDate"
-]
+const {
+    defaultUserSettings,
+    excludeProperties,
+    getOptionsAllowed
+} = settings
 
 const updateTokenExpireDate = (user) =>{
     return new Promise( (resolve, reject) => {
@@ -80,6 +63,44 @@ const findOne = (settings) => {
 }
 
 const User = {
+    validateBody: (bodyOptions, method) =>{
+        const resultObject = {
+            result: true,
+            message: []
+        };
+        for(const property of bodyOptions){
+            switch (method) {
+                case "GET":
+                    if(!getOptionsAllowed.includes(property)){
+                        resultObject.result = false;
+                        resultObject.message.push(property);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+        return resultObject;
+    },
+    isAuthenticated(bodyOptions){
+        return new Promise( resolve => {
+            const resultObject ={
+                result: true,
+                message: ""
+            };
+            const query = {
+                name: bodyOptions.name,
+                token: bodyOptions.token
+            }
+            UserModel.findOne(query, (err) =>{
+                if(err){
+                   resultObject.result = false;
+                   resultObject.message = err; 
+                }
+                resolve(resultObject);
+            } )
+        });
+    },
     get: (settings) => {
         return findOne(settings);
     },

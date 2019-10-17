@@ -21,6 +21,8 @@ app.use(bodyParser.json());
 
 app.use(cors());
 
+app.use("/user", require("./Router/UserRoute"));
+
 // route for user signup
 app.route('/signup')
     .post((req, res) => {
