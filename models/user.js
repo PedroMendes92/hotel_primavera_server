@@ -33,34 +33,38 @@ const {
     getOptionsAllowed
 } = settings
 
-const updateTokenExpireDate = (user) =>{
-    return new Promise( (resolve, reject) => {
-        user.tokenExpireDate = moment().add(30,"m").toString();
-        user.save((err) => {
-            if(err) reject(err);
-            resolve(user);
-        });
-    })
+const updateTokenExpireDate = async (user) =>{
+    user.tokenExpireDate = moment().add(30,"m").toString();
+    const updatedUser = await user.save();
+    if( updatedUser){
+        return updatedUser
+    }
+    console.error("Error in: updateTokenExpireDate", user);
+    return false;
 }
 
 const canProceed = (user, settings) => {
-    return (settings.token === user.token &&
-           moment().isBefore(user.tokenExpireDate) );
+    console.log("can proceed")
+    console.log(settings.token, user.token);
+    console.log(moment().isBefore(user.tokenExpireDate))
+    return settings.token === user.token &&
+           moment().isBefore(user.tokenExpireDate) ;
 }
 
 
-const findOne = (settings) => {
-    return new Promise( (resolve, reject) => {
-        UserModel.findOne({"name":settings.name}, (err, user) =>{
-            if(canProceed(user, settings)){
-                updateTokenExpireDate(user,settings)
-                .then((user) => resolve(user) )
-                .catch((err) => reject(err))
-            }else{
-                reject("access denied or token expired");
+const findOne = async (settings) => {
+    const userDoc = await UserModel.findOne(settings.query);
+    if(userDoc){
+        const isTokenValid = canProceed(userDoc, settings);
+        if(isTokenValid){
+            const updatedUser = await updateTokenExpireDate(userDoc,settings)
+            if(updatedUser){
+                return updatedUser
             }
-        })
-    });
+        }
+    }
+    console.error("Error in: findOne", query);
+    return false;
 }
 
 const User = {
@@ -69,11 +73,12 @@ const User = {
             result: true,
             message: []
         };
-        console.log(method)
-        for(const property of Object.keys(bodyOptions)){
+        for(const property of getOptionsAllowed){
+            console.log("property", property);
             switch (method) {
                 case "POST":
-                    if(!getOptionsAllowed.includes(property)){
+                    console.log("POST", getOptionsAllowed, property)
+                    if(!bodyOptions.hasOwnProperty(property)){
                         resultObject.result = false;
                         resultObject.message.push(property);
                     }
@@ -82,32 +87,31 @@ const User = {
                     break;
             }
         }
-        console.log(resultObject)
         return resultObject;
     },
-    isAuthenticated(bodyOptions){
-        return new Promise( resolve => {
-            const resultObject ={
-                result: true,
-                message: ""
-            };
-            const query = {
-                name: bodyOptions.name,
-                token: bodyOptions.token
-            }
-            UserModel.findOne(query, (err) =>{
-                if(err){
-                   resultObject.result = false;
-                   resultObject.message = err; 
-                }
-                resolve(resultObject);
-            } )
-        });
-    },
-    get: async (settings) => {
-        const query = { name: settings.name };
+    isAuthenticated: async(bodyOptions) =>{
+        const resultObject ={
+            result: true,
+            message: ""
+        };
+        const query = {
+            name: bodyOptions.name,
+            token: bodyOptions.token
+        }
         const user = await UserModel.findOne(query);
-        return user;
+        if(!user){
+            resultObject.result = false;
+            resultObject.message = "User is not Authenticated "; 
+        } 
+        return resultObject;
+    },
+    getUser: async (settings) => {
+        settings.query = { name: settings.name };
+        const user = await findOne(settings);
+        if(user){
+            return user;
+        }
+        return false;
     },
     create: (settings) => {
         settings.password = bcrypt.hashSync(settings.password, bcrypt.genSaltSync());
@@ -122,28 +126,19 @@ const User = {
             });
         });
     },
-    update: (settings) => {
-        return new Promise((resolve, reject) => {
-            findOne(settings)
-                .then(user => {
-                    const userObject = user.toObject();
-                    for (const key in settings) {
-                        if (settings.hasOwnProperty(key) &&
-                            userObject.hasOwnProperty(key) ) {
-                            if( !excludeProperties.includes(key)) {
-                                user[key] = settings[key];
-                            }
-                        }else{
-                            reject(`the property ${key} is not vaild`);
-                        }
-                    }
-                    user.save((err) => {
-                        if(err) reject(err);
-                        resolve(user);
-                    });
-                })
-                .catch(err => reject(err))
-        })
+    update: async (settings) => {
+        const user = await findOne({query: {name:settings.name}, token:settings.token});
+        if(user){
+            console.log("settings",settings)
+            const filteredSettings = Object.entries(settings).filter( setting =>{
+                return !excludeProperties.includes(setting[0]);
+            });
+            filteredSettings.forEach((setting) =>{
+                user[setting[0]] = setting[1];
+            })
+            return await user.save();
+        }
+        return false;
     },
     login: (settings) => {
         return new Promise( (resolve, reject) => {

@@ -18,7 +18,7 @@
         "nationality": 0,
         "healthNumber": 0
     },
-    "excludedProperties": [
+    "excludeProperties": [
         "name", "token", "tokenExpireDate"
     ],
     "getOptionsAllowed":["name", "token"]
