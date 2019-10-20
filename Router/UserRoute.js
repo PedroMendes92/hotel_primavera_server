@@ -13,13 +13,28 @@ function validateBody(req, res, next){
 
 async function isAuthenticated(req, res, next){
     const {result,message} = await User.isAuthenticated(req.body);
-    console.log("is Auth? ", result, message);
     if(result){
         next()
     }else{
         res.status(401).send(message);
     }
 }
+
+router.post('/signup', async (req, res) => {
+    const {status, message} = await User.create(req.body)
+    res.status(status).send(message).end();
+});
+
+router.post('/login', async (req,res) => {
+    const {status, message} = await User.login(req.body)
+    res.status(status).send(message).end();
+});
+
+router.post("/logout", async (req,res) => {
+    const {status, message} = await User.logout(req.body)
+    res.status(status).send(message).end();
+});
+
 
 router.use(validateBody);
 router.use(isAuthenticated);
@@ -32,7 +47,7 @@ router.post("/", async (req,res) => {
         res.status(500).send("500 - Server Error!").end();
     }
 });
-router.put("/", async(req,res)=>{
+router.put("/", async (req,res)=>{
     const userModified = await User.update(req.body);
     if(userModified){
         res.status(200).send(userModified).end();

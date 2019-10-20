@@ -33,6 +33,12 @@ const {
     getOptionsAllowed
 } = settings
 
+const resultObject = () => {
+    return {
+        status: 200,
+        message: ""
+    };
+}
 const updateTokenExpireDate = async (user) =>{
     user.tokenExpireDate = moment().add(30,"m").toString();
     const updatedUser = await user.save();
@@ -74,10 +80,8 @@ const User = {
             message: []
         };
         for(const property of getOptionsAllowed){
-            console.log("property", property);
             switch (method) {
                 case "POST":
-                    console.log("POST", getOptionsAllowed, property)
                     if(!bodyOptions.hasOwnProperty(property)){
                         resultObject.result = false;
                         resultObject.message.push(property);
@@ -95,7 +99,7 @@ const User = {
             message: ""
         };
         const query = {
-            name: bodyOptions.name,
+            email: bodyOptions.email,
             token: bodyOptions.token
         }
         const user = await UserModel.findOne(query);
@@ -106,25 +110,34 @@ const User = {
         return resultObject;
     },
     getUser: async (settings) => {
-        settings.query = { name: settings.name };
+        settings.query = { email: settings.email };
         const user = await findOne(settings);
         if(user){
             return user;
         }
         return false;
     },
-    create: (settings) => {
+    create: async (settings) => {
+        const resultObject = {status:200, message:""};
         settings.password = bcrypt.hashSync(settings.password, bcrypt.genSaltSync());
         const newUser = new UserModel( Object.assign(defaultUserSettings, settings));
-        return new Promise((resolve, reject) => {
-            newUser.save((err) => {
-                if(err){
-                    reject(err);
-                }else{
-                   resolve(newUser);
-                }
-            });
-        });
+        const isEmailUsed = await UserModel.findOne({email: settings.email});
+        console.log("isEmailUsed", isEmailUsed);
+        if(!isEmailUsed ){
+            console.log(newUser)
+            const savedUser = await newUser.save();
+            console.log("savedUser", savedUser);
+            if(savedUser){
+                resultObject.message = savedUser;
+            } else {
+                resultObject.status = 500;
+                resultObject.message = "Error creating the User."
+            }
+        } else{
+            resultObject.status = 400;
+            resultObject.message = `User ${settings.email} already exists!`;
+        }
+        return resultObject;
     },
     update: async (settings) => {
         const user = await findOne({query: {name:settings.name}, token:settings.token});
@@ -140,27 +153,49 @@ const User = {
         }
         return false;
     },
-    login: (settings) => {
-        return new Promise( (resolve, reject) => {
-            UserModel.findOne({"name":settings.name}, (err, user) => {
-                if(user && bcrypt.compareSync(settings.password, user.password)) {
-                    user.token = tokgen.generate();
-                    updateTokenExpireDate(user,settings)
-                        .then((user) => resolve(user.token) )
-                        .catch((err) => reject(err));
+    login: async (settings) => {
+        const resultObject = {status:200, message:""};
+        const user = await UserModel.findOne( {email:settings.email} );
+        if(user){
+            if( bcrypt.compareSync(settings.password, user.password) ) {
+                user.token = tokgen.generate();
+                const savedUser = updateTokenExpireDate(user,settings);
+                if(savedUser){
+                    resultObject.message = savedUser;
                 }else{
-                    reject("wrong password");
+                    resultObject.status = 500;
+                    resultObject.message = "Error in Login!";
                 }
-            });
-        });
+            }else{
+                resultObject.status = 401;
+                resultObject.message = "Wrong password!";
+            }
+        }else{
+            resultObject.status = 400;
+            resultObject.message = `User ${settings.email} not found!`;
+        }
+        return resultObject;
     },
-    logout: (settings) => {
-        UserModel.findOneAndUpdate( 
-            {name: settings.name},
-            {
-                token: "",
-                tokenExpireDate: ""
-            } )
+    logout: async (settings) => {
+        const resultObject = {status:200, message:""};
+        const user = await UserModel.findOne( 
+            {email: settings.email}
+        );
+        if(user){
+            user.token = "";
+            user.tokenExpireDate = "";
+            const savedUser = await user.save();
+            if(savedUser){
+                resultObject.message = savedUser;
+            }else{
+                resultObject.status = 500;
+                resultObject.message = "Failed to Log out!";
+            }
+        }else{
+            resultObject.status = 400;
+            resultObject.message = `User ${settings.email} not found!`;
+        }
+        return resultObject;
     }
 }
 
