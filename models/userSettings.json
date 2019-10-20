@@ -1,0 +1,25 @@
+{
+    "defaultUserSettings": {
+        "name": "",
+        "email": "",
+        "password": "",
+        "token": "",
+        "tokenExpireDate": "",
+        "phone": 0,
+        "job": "",
+        "address": "",
+        "postalCode": "",
+        "cc": 0,
+        "id": 0,
+        "birthDate": "",
+        "expiryDate": "",
+        "tax": 0,
+        "socialSecurity": 0,
+        "nationality": 0,
+        "healthNumber": 0
+    },
+    "excludeProperties": [
+        "name", "token", "tokenExpireDate"
+    ],
+    "getOptionsAllowed":["name", "token"]
+}
