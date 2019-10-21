@@ -159,7 +159,7 @@ const User = {
         if(user){
             if( bcrypt.compareSync(settings.password, user.password) ) {
                 user.token = tokgen.generate();
-                const savedUser = updateTokenExpireDate(user,settings);
+                const savedUser = await updateTokenExpireDate(user,settings);
                 if(savedUser){
                     resultObject.message = savedUser;
                 }else{
