@@ -61,12 +61,15 @@ const canProceed = (user, settings) => {
 const findOne = async (settings) => {
     const userDoc = await UserModel.findOne(settings.query);
     if(userDoc){
-        const updatedUser = await updateTokenExpireDate(userDoc,settings);
-        if (updatedUser) {
-            return updatedUser;
+        const isTokenValid = canProceed(userDoc, settings);
+        if(isTokenValid){
+            const updatedUser = await updateTokenExpireDate(userDoc,settings)
+            if(updatedUser){
+                return updatedUser
+            }
         }
     }
-    console.error("Error in: findOne", settings.query);
+    console.error("Error in: findOne", query);
     return false;
 }
 
@@ -91,26 +94,19 @@ const User = {
         return resultObject;
     },
     isAuthenticated: async(bodyOptions) =>{
-        let resultObject = {
-            result: false,
-            message: "User is not Authenticated"
+        const resultObject ={
+            result: true,
+            message: ""
         };
         const query = {
             email: bodyOptions.email,
             token: bodyOptions.token
-        };
-        const user = await UserModel.findOne(query);
-        if(user){
-            const isTokenValid = canProceed(user, query);
-            if (isTokenValid) {
-                resultObject = {
-                    result: true,
-                    message: ""
-                };
-            } else {
-                resultObject.message = resultObject.message + " - Token expired";
-            }
         }
+        const user = await UserModel.findOne(query);
+        if(!user){
+            resultObject.result = false;
+            resultObject.message = "User is not Authenticated "; 
+        } 
         return resultObject;
     },
     getUser: async (settings) => {
