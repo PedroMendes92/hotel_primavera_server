@@ -6,6 +6,7 @@ const TokenGenerator = require('uuid-token-generator');
 const tokgen = new TokenGenerator(256, TokenGenerator.BASE62);
 
 const UserSchema = mongoose.Schema({
+    isAdmin: Boolean,
     name: String,
     email: String,
     password: String,
@@ -21,7 +22,7 @@ const UserSchema = mongoose.Schema({
     expiryDate: Date,
     tax: Number,
     socialSecurity: Number,
-    nationality: Number,
+    nationality: String,
     healthNumber: Number
 });
 
@@ -182,7 +183,7 @@ const User = {
     },
     logout: async (settings) => {
         const resultObject = {status:200, message:""};
-        const user = await UserModel.findOne( 
+        const user = await UserModel.findOne(
             {email: settings.email}
         );
         if(user){

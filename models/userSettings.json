@@ -1,5 +1,6 @@
 {
     "defaultUserSettings": {
+        "isAdmin": false,
         "name": "",
         "email": "",
         "password": "",
@@ -15,7 +16,7 @@
         "expiryDate": "",
         "tax": 0,
         "socialSecurity": 0,
-        "nationality": 0,
+        "nationality": "",
         "healthNumber": 0
     },
     "excludeProperties": [
