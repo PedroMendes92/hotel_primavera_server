@@ -6,6 +6,7 @@ const TokenGenerator = require('uuid-token-generator');
 const tokgen = new TokenGenerator(256, TokenGenerator.BASE62);
 
 const UserSchema = mongoose.Schema({
+    isAdmin: Boolean,
     name: String,
     email: String,
     password: String,
@@ -21,7 +22,7 @@ const UserSchema = mongoose.Schema({
     expiryDate: Date,
     tax: Number,
     socialSecurity: Number,
-    nationality: Number,
+    nationality: String,
     healthNumber: Number
 });
 
@@ -61,15 +62,12 @@ const canProceed = (user, settings) => {
 const findOne = async (settings) => {
     const userDoc = await UserModel.findOne(settings.query);
     if(userDoc){
-        const isTokenValid = canProceed(userDoc, settings);
-        if(isTokenValid){
-            const updatedUser = await updateTokenExpireDate(userDoc,settings)
-            if(updatedUser){
-                return updatedUser
-            }
+        const updatedUser = await updateTokenExpireDate(userDoc,settings);
+        if (updatedUser) {
+            return updatedUser;
         }
     }
-    console.error("Error in: findOne", query);
+    console.error("Error in: findOne", settings.query);
     return false;
 }
 
@@ -94,19 +92,26 @@ const User = {
         return resultObject;
     },
     isAuthenticated: async(bodyOptions) =>{
-        const resultObject ={
-            result: true,
-            message: ""
+        let resultObject = {
+            result: false,
+            message: "User is not Authenticated"
         };
         const query = {
             email: bodyOptions.email,
             token: bodyOptions.token
-        }
+        };
         const user = await UserModel.findOne(query);
-        if(!user){
-            resultObject.result = false;
-            resultObject.message = "User is not Authenticated "; 
-        } 
+        if(user){
+            const isTokenValid = canProceed(user, query);
+            if (isTokenValid) {
+                resultObject = {
+                    result: true,
+                    message: ""
+                };
+            } else {
+                resultObject.message = resultObject.message + " - Token expired";
+            }
+        }
         return resultObject;
     },
     getUser: async (settings) => {
@@ -178,7 +183,7 @@ const User = {
     },
     logout: async (settings) => {
         const resultObject = {status:200, message:""};
-        const user = await UserModel.findOne( 
+        const user = await UserModel.findOne(
             {email: settings.email}
         );
         if(user){
