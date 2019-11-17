@@ -9,6 +9,10 @@ const UserSchema = mongoose.Schema({
     isAdmin: Boolean,
     name: String,
     email: String,
+    deleted: {
+        type: Boolean,
+        default: false
+    },
     password: String,
     token: String,
     tokenExpireDate: Date,
@@ -59,16 +63,23 @@ const canProceed = (user, settings) => {
 }
 
 
-const findOne = async (settings) => {
+const findOne = async (settings, updateToken = true) => {
     const userDoc = await UserModel.findOne(settings.query);
     if(userDoc){
-        const updatedUser = await updateTokenExpireDate(userDoc,settings);
-        if (updatedUser) {
-            return updatedUser;
+        if(updateToken){
+            const updatedUser = await updateTokenExpireDate(userDoc,settings);
+            if (updatedUser) {
+                return updatedUser;
+            }
         }
+        return userDoc;
     }
     console.error("Error in: findOne", settings.query);
     return false;
+}
+
+const findAll = async () =>{
+    return await UserModel.find({deleted:false});
 }
 
 const User = {
@@ -114,6 +125,9 @@ const User = {
         }
         return resultObject;
     },
+    getAll: async () => {
+        return await findAll();
+    },
     getUser: async (settings) => {
         settings.query = { email: settings.email };
         const user = await findOne(settings);
@@ -121,6 +135,39 @@ const User = {
             return user;
         }
         return false;
+    },
+    deleteUser: async (settings) =>{
+        settings.query = { email: settings.email };
+        const user = await findOne(settings, false);
+        if(user){
+            user.deleted = true;
+            return await user.save();
+        }
+        return null;
+        
+    },
+    createAdmin: async (settings) => {
+        settings.isAdmin = true;
+        const resultObject = {status:200, message:""};
+        settings.password = bcrypt.hashSync(settings.password, bcrypt.genSaltSync());
+        const newUser = new UserModel( Object.assign(defaultUserSettings, settings));
+        const isEmailUsed = await UserModel.findOne({email: settings.email});
+        console.log("isEmailUsed", isEmailUsed);
+        if(!isEmailUsed ){
+            console.log(newUser)
+            const savedUser = await newUser.save();
+            console.log("savedUser", savedUser);
+            if(savedUser){
+                resultObject.message = savedUser;
+            } else {
+                resultObject.status = 500;
+                resultObject.message = "Error creating the User."
+            }
+        } else{
+            resultObject.status = 400;
+            resultObject.message = `User ${settings.email} already exists!`;
+        }
+        return resultObject;
     },
     create: async (settings) => {
         const resultObject = {status:200, message:""};
@@ -145,7 +192,7 @@ const User = {
         return resultObject;
     },
     update: async (settings) => {
-        const user = await findOne({query: {name:settings.name}, token:settings.token});
+        const user = await findOne({query: {name:settings.name}});
         if(user){
             console.log("settings",settings)
             const filteredSettings = Object.entries(settings).filter( setting =>{

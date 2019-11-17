@@ -21,7 +21,7 @@ async function isAuthenticated(req, res, next){
 }
 
 router.post('/signup', async (req, res) => {
-    const {status, message} = await User.create(req.body)
+    const {status, message} = await User.createAdmin(req.body)
     res.status(status).send(message).end();
 });
 
@@ -36,25 +36,34 @@ router.post("/logout", async (req,res) => {
 });
 
 
-router.use(validateBody);
-router.use(isAuthenticated);
+//router.use(validateBody);
+//router.use(isAuthenticated);
 
-router.post("/", async (req,res) => {
-    const user = await User.getUser(req.body);
-    if(user){
-        res.status(200).send(user).end();
+router.get("/user", async(req, res) => {
+    const users = await User.getAll();
+    if(users){
+        res.status(200).send(users).end();
     }else{
         res.status(500).send("500 - Server Error!").end();
     }
 });
-router.put("/", async (req,res)=>{
+
+router.put("/user", async (req,res)=>{
     const userModified = await User.update(req.body);
     if(userModified){
         res.status(200).send(userModified).end();
     }else{
         res.status(500).send("500 - Server Error!").end();
     }
-    res.status(500).end();
+});
+
+router.delete("/user", async (req, res) => {
+    const userModified = await User.deleteUser(req.body);
+    if(userModified){
+        res.status(200).send(userModified).end();
+    }else{
+        res.status(500).send("500 - Server Error!").end();
+    }
 });
 
 module.exports = router;

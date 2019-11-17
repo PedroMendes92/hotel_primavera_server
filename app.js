@@ -21,6 +21,7 @@ app.use(bodyParser.json());
 
 app.use(cors());
 
+app.use("/admin", require("./Router/AdminRoute"));
 app.use("/user", require("./Router/UserRoute"));
 
 // route for handling 404 requests(unavailable routes)
