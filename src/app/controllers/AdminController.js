@@ -13,7 +13,7 @@ const newDocumentSettings = {
 router.use(authMiddleware);
 router.use(adminMiddleware);
 
-router.get("/", async (req, res)  => {
+router.get("/user", async (req, res)  => {
 
     try {
         const user = await User.find();
@@ -23,7 +23,7 @@ router.get("/", async (req, res)  => {
     }
 });
 
-router.put("/:userId", async (req, res) => {
+router.put("/user/:userId", async (req, res) => {
     try {
         const modifiedUser = await User.findByIdAndUpdate(
             req.params.userId,
@@ -36,16 +36,25 @@ router.put("/:userId", async (req, res) => {
     }
 });
 
-router.delete("/:userId", async (req, res) => {
+router.delete("/user", async (req, res) => {
+    try {
+        const user = await User.deleteMany();
+        res.status(200).end();
+    } catch (e) {
+        res.status(400).send({ error: "Error deleting users"});
+    }
+});
+
+router.delete("/user/:userId", async (req, res) => {
     try {
         const user = await User.findByIdAndDelete(
             req.params.userId
         );
-        res.status(200).send({user});
+        res.status(200).end();
     } catch (e) {
         res.status(400).send({ error: "Error deleting user"});
     }
-})
+});
 
 
 module.exports = app => app.use("/admin", router);
