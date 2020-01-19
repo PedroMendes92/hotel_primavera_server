@@ -33,7 +33,7 @@ bower_components
 build/Release
 
 # Dependency directories
-db/
+src/db/
 node_modules/
 jspm_packages/
 
@@ -64,3 +64,6 @@ typings/
 # IDEA
 .idea
 *.iml
+
+# VSCODE
+.vscode/
